@@ -1,0 +1,73 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the content_theme module.
+ */
+
+
+/**
+ * Implements hook_schema().
+ */
+function content_theme_schema() {
+
+  $schema = array();
+  $schema['content_theme_node'] = array(
+    'description' => 'Stores themes when creating, editing, or viewing content.',
+    'fields' => array(
+      'ctnid' => array(
+        'description' => 'Primary Key: Unique content node theme ID.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'nid' => array(
+        'description' => 'Node id to which the theme is assigned.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'action' => array(
+        'description' => 'Node action to which the theme is assigned.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'theme' => array(
+        'description' => 'Theme name.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array('ctnid'),
+    'unique keys' => array(
+      'node_action' => array('nid', 'action'),
+    ),
+    'indexes' => array(
+      'list' => array('nid', 'action', 'theme'),
+    ),
+  );
+
+  return $schema;
+}
+
+
+/**
+* Implements hook_uninstall().
+*/
+function content_theme_uninstall() {
+
+  foreach (node_type_get_types() as $node_type => $value) {
+    variable_del('content_theme_content_type_edit_'. $node_type);
+    variable_del('content_theme_content_type_view_'. $node_type);
+  }
+  variable_del('content_theme_content_wide_edit');
+  variable_del('content_theme_content_wide_view');
+  variable_del('content_theme_content_node_list');
+  variable_del('content_theme_content_type_list');
+  variable_del('content_theme_content_wide_list');
+}

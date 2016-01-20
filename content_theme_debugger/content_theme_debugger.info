@@ -1,0 +1,7 @@
+name = Content Theme Debugger
+description = Displays a list of modules which override the system default theme sorted by module's call-up.
+backdrop = 1.x
+type = module
+package = Appearance
+configure = admin/structure/layouts/manage/default
+dependencies[] = content_theme
