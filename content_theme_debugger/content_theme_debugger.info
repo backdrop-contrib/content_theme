@@ -4,4 +4,4 @@ backdrop = 1.x
 package = Appearance
 type = module
 dependencies[] = content_theme
-configure = admin/structure/layouts/manage/default
+configure = admin/structure/layouts
