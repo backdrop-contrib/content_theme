@@ -36,7 +36,7 @@ function content_theme_debugger_block_configure($delta = '') {
       '#type' => 'textarea',
       '#title' => t('Blacklist'),
       '#description' => t('Enter one module per line of each modules that should not execute <em>hook_custom_theme()</em>. Example modules are <em>og</em> for the Organic Groups module and <em>views</em> for the Views module.'),
-      '#default_value' => variable_get('content_theme_debugger_blacklist', "ctools\nog\nviews"),
+      '#default_value' => config_get('content_theme_debugger.settings', 'blacklist'),
     );
   }
 
@@ -51,7 +51,7 @@ function content_theme_debugger_block_save($delta = '', $edit = array()) {
 
   if ($delta == 'content_theme_debugger') {
 
-    variable_set('content_theme_debugger_blacklist', $edit['content_theme_debugger_blacklist']);
+    config_set('content_theme_debugger.settings', 'blacklist', $edit['content_theme_debugger_blacklist']);
   }
 }
 
@@ -65,11 +65,11 @@ function content_theme_debugger_block_view($delta = '') {
 
   if ($delta == 'content_theme_debugger') {
 
-    $content_theme_debugger_blacklist = variable_get('content_theme_debugger_blacklist', "ctools\nog\nviews");
+    $content_theme_debugger_blacklist = config_get('content_theme_debugger.settings', 'blacklist');
     $blacklist = preg_split("/\r\n|\n|\r|\s/", $content_theme_debugger_blacklist, -1, PREG_SPLIT_NO_EMPTY);
 
     $items = array();
-    $items[] = t('Default theme: %theme', array('%theme' => content_theme_get_themes(variable_get('theme_default', 'bartik'))));
+    $items[] = t('Default theme: %theme', array('%theme' => content_theme_get_themes(config_get('system.core', 'theme_default'))));
 
     foreach (module_implements('custom_theme') as $module) {
 
@@ -92,4 +92,19 @@ function content_theme_debugger_block_view($delta = '') {
   }
 
   return $block;
+}
+
+
+/**
+ * Implements hook_config_info().
+ */
+function content_theme_debugger_config_info() {
+
+  $prefixes = array();
+  $prefixes['content_theme_debugger.settings'] = array(
+    'label' => t('Content Theme Debugger settings'),
+    'group' => t('Configuration'),
+  );
+
+  return $prefixes;
 }
