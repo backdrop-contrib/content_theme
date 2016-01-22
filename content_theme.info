@@ -1,6 +1,6 @@
 name = Content Theme
 description = Allows to use different themes than the site default on content creating, editing, and viewing pages.
 backdrop = 1.x
-type = module
 package = Appearance
+type = module
 configure = admin/structure/content-theme
