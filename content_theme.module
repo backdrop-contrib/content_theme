@@ -66,15 +66,6 @@ function content_theme_menu() {
     'weight' => 10,
     'file' => 'content_theme.admin.inc',
   );
-  $items['admin/appearance/content-theme/settings'] = array(
-    'title' => 'Settings',
-    'page callback' => 'backdrop_get_form',
-    'page arguments' => array('content_theme_admin_settings'),
-    'access arguments' => array('administer themes'),
-    'type' => MENU_LOCAL_TASK,
-    'weight' => 20,
-    'file' => 'content_theme.admin.inc',
-  );
 
   return $items;
 }

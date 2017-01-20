@@ -79,9 +79,6 @@ function content_theme_uninstall() {
   }
   variable_del('content_theme_content_wide_edit');
   variable_del('content_theme_content_wide_view');
-  variable_del('content_theme_content_node_list');
-  variable_del('content_theme_content_type_list');
-  variable_del('content_theme_content_wide_list');
 }
 
 
@@ -98,4 +95,14 @@ function content_theme_update_1200() {
     ->fields(array('weight' => 40))
     ->condition('name', 'content_theme')
     ->execute();
+}
+
+/**
+ * Remove unnecessary variables.
+ */
+function content_theme_update_1201() {
+
+  variable_del('content_theme_content_wide_list');
+  variable_del('content_theme_content_type_list');
+  variable_del('content_theme_content_node_list');
 }
