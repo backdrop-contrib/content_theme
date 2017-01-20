@@ -57,8 +57,20 @@ function content_theme_schema() {
 
 
 /**
-* Implements hook_uninstall().
-*/
+ * Implements hook_install().
+ */
+function content_theme_install() {
+
+  db_update('system')
+    ->fields(array('weight' => 40))
+    ->condition('name', 'content_theme')
+    ->execute();
+}
+
+
+/**
+ * Implements hook_uninstall().
+ */
 function content_theme_uninstall() {
 
   foreach (node_type_get_types() as $node_type => $value) {
@@ -70,4 +82,20 @@ function content_theme_uninstall() {
   variable_del('content_theme_content_node_list');
   variable_del('content_theme_content_type_list');
   variable_del('content_theme_content_wide_list');
+}
+
+
+/**
+ * Branch 1.x.2.x
+ */
+
+/**
+ * Set module's weight to 40.
+ */
+function content_theme_update_1200() {
+
+  db_update('system')
+    ->fields(array('weight' => 40))
+    ->condition('name', 'content_theme')
+    ->execute();
 }
