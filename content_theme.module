@@ -13,9 +13,6 @@
 function content_theme_permission() {
 
   $perm = array();
-  $perm['administer content theme'] = array(
-    'title' => t('Administer content theme settings'),
-  );
   foreach (node_type_get_types() as $type => $value) {
     $info = node_type_get_type($type);
 
@@ -41,7 +38,7 @@ function content_theme_menu() {
     'description' => 'Configure which theme is used when content is created, edited or be viewed.',
     'page callback' => 'backdrop_get_form',
     'page arguments' => array('content_theme_admin_content_wide'),
-    'access arguments' => array('administer content theme'),
+    'access arguments' => array('administer themes'),
     'type' => MENU_LOCAL_TASK,
     'weight' => 40,
     'file' => 'content_theme.admin.inc',
@@ -55,7 +52,7 @@ function content_theme_menu() {
     'title' => 'Content type',
     'page callback' => 'backdrop_get_form',
     'page arguments' => array('content_theme_admin_content_type'),
-    'access arguments' => array('administer content theme'),
+    'access arguments' => array('administer themes'),
     'type' => MENU_LOCAL_TASK,
     'weight' => 0,
     'file' => 'content_theme.admin.inc',
@@ -64,7 +61,7 @@ function content_theme_menu() {
     'title' => 'Content node',
     'page callback' => 'backdrop_get_form',
     'page arguments' => array('content_theme_admin_content_node'),
-    'access arguments' => array('administer content theme'),
+    'access arguments' => array('administer themes'),
     'type' => MENU_LOCAL_TASK,
     'weight' => 10,
     'file' => 'content_theme.admin.inc',
@@ -73,7 +70,7 @@ function content_theme_menu() {
     'title' => 'Settings',
     'page callback' => 'backdrop_get_form',
     'page arguments' => array('content_theme_admin_settings'),
-    'access arguments' => array('administer content theme'),
+    'access arguments' => array('administer themes'),
     'type' => MENU_LOCAL_TASK,
     'weight' => 20,
     'file' => 'content_theme.admin.inc',
