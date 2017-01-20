@@ -36,21 +36,22 @@ function content_theme_permission() {
  */
 function content_theme_menu() {
 
-  $menu = array();
-  $menu['admin/structure/content-theme'] = array(
+  $items['admin/appearance/content-theme'] = array(
     'title' => 'Content theme',
     'description' => 'Configure which theme is used when content is created, edited or be viewed.',
     'page callback' => 'backdrop_get_form',
-    'page arguments' => array('content_theme_admin_content_node'),
+    'page arguments' => array('content_theme_admin_content_wide'),
     'access arguments' => array('administer content theme'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 40,
     'file' => 'content_theme.admin.inc',
   );
-  $menu['admin/structure/content-theme/content-node'] = array(
-    'title' => 'Content node',
+  $items['admin/appearance/content-theme/content-wide'] = array(
+    'title' => 'Content wide',
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'weight' => -10,
   );
-  $menu['admin/structure/content-theme/content-type'] = array(
+  $items['admin/appearance/content-theme/content-type'] = array(
     'title' => 'Content type',
     'page callback' => 'backdrop_get_form',
     'page arguments' => array('content_theme_admin_content_type'),
@@ -59,16 +60,16 @@ function content_theme_menu() {
     'weight' => 0,
     'file' => 'content_theme.admin.inc',
   );
-  $menu['admin/structure/content-theme/content-wide'] = array(
-    'title' => 'Content wide',
+  $items['admin/appearance/content-theme/content-node'] = array(
+    'title' => 'Content node',
     'page callback' => 'backdrop_get_form',
-    'page arguments' => array('content_theme_admin_content_wide'),
+    'page arguments' => array('content_theme_admin_content_node'),
     'access arguments' => array('administer content theme'),
     'type' => MENU_LOCAL_TASK,
     'weight' => 10,
     'file' => 'content_theme.admin.inc',
   );
-  $menu['admin/structure/content-theme/settings'] = array(
+  $items['admin/appearance/content-theme/settings'] = array(
     'title' => 'Settings',
     'page callback' => 'backdrop_get_form',
     'page arguments' => array('content_theme_admin_settings'),
@@ -78,7 +79,7 @@ function content_theme_menu() {
     'file' => 'content_theme.admin.inc',
   );
 
-  return $menu;
+  return $items;
 }
 
 
