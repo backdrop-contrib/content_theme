@@ -23,14 +23,14 @@ function content_theme_admin_content_wide($form, &$form_state) {
     '#type' => 'select',
     '#title' => t('Creating & editing theme'),
     '#description' => t('Choose which theme the content creating and editing pages should display in. Default theme: %default_theme.', array('%default_theme' => t('System default theme'))),
-    '#default_value' => config_get('content_theme.content_wide', 'edit'),
+    '#default_value' => config_get('content_theme.content_wide', 'content_theme_edit'),
     '#options' => content_theme_get_themes_options_content_wide(),
   );
   $form['update']['content_theme_view'] = array(
     '#type' => 'select',
     '#title' => t('Viewing theme'),
     '#description' => t('Choose which theme the content viewing pages should display in. Default theme: %default_theme.', array('%default_theme' => t('System default theme'))),
-    '#default_value' => config_get('content_theme.content_wide', 'view'),
+    '#default_value' => config_get('content_theme.content_wide', 'content_theme_view'),
     '#options' => content_theme_get_themes_options_content_wide(),
   );
   $form['update']['actions'] = array('#type' => 'actions');
@@ -43,8 +43,8 @@ function content_theme_admin_content_wide_submit($form, &$form_state) {
 
   config('content_theme.content_wide')
     ->setData(array(
-      'edit' => $form_state['values']['content_theme_edit'],
-      'view' => $form_state['values']['content_theme_view'],
+      'content_theme_edit' => $form_state['values']['content_theme_edit'],
+      'content_theme_view' => $form_state['values']['content_theme_view'],
     ))
     ->save();
 
@@ -127,7 +127,7 @@ function content_theme_admin_content_type_validate($form, &$form_state) {
     form_set_error('', t('No themes selected.'));
   }
   if (count(array_filter($values['types'])) == 0) {
-    form_set_error('', t(' Select one or more content type to perform the update on.'));
+    form_set_error('', t('Select one or more content type to perform the update on.'));
   }
 }
 
@@ -253,7 +253,7 @@ function content_theme_admin_content_node_validate($form, &$form_state) {
     form_set_error('', t('Select one or both themes to perform the update on.'));
   }
   if (count(array_filter($values['nodes'])) == 0) {
-    form_set_error('', t(' Select one or more content node to perform the update on.'));
+    form_set_error('', t('Select one or more content node to perform the update on.'));
   }
 }
 
@@ -287,6 +287,7 @@ function content_theme_admin_content_node_submit($form, &$form_state) {
     }
   }
 
-  backdrop_set_message(t('The themes have been updated.'));
   cache_clear_all();
+
+  backdrop_set_message(t('The themes have been updated.'));
 }

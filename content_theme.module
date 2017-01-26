@@ -83,21 +83,21 @@ function content_theme_custom_theme() {
     if ($arg[1] == 'add') {
       $theme_node = FALSE;
       $theme_type = config_get('node.type.' . strtr($arg[2], array('-' => '_')), 'settings.content_theme_edit');
-      $theme_wide = config_get('content_theme.content_wide', 'edit');
+      $theme_wide = config_get('content_theme.content_wide', 'content_theme_edit');
     }
     elseif (isset($arg[2]) && $arg[2] == 'edit') {
       $type_name = db_query('SELECT type FROM {node} WHERE nid = :nid', array(':nid' => $arg[1]))->fetchField();
 
       $theme_node = db_query('SELECT theme FROM {content_theme_node} WHERE nid = :nid AND action = :action', array(':nid' => $arg[1], ':action' => 'edit'))->fetchField();
       $theme_type = config_get('node.type.' . $type_name, 'settings.content_theme_edit');
-      $theme_wide = config_get('content_theme.content_wide', 'edit');
+      $theme_wide = config_get('content_theme.content_wide', 'content_theme_edit');
     }
     else {
       $type_name = db_query('SELECT type FROM {node} WHERE nid = :nid', array(':nid' => $arg[1]))->fetchField();
 
       $theme_node = db_query('SELECT theme FROM {content_theme_node} WHERE nid = :nid AND action = :action', array(':nid' => $arg[1], ':action' => 'view'))->fetchField();
       $theme_type = config_get('node.type.' . $type_name, 'settings.content_theme_view');
-      $theme_wide = config_get('content_theme.content_wide', 'view');
+      $theme_wide = config_get('content_theme.content_wide', 'content_theme_view');
     }
 
     if ($theme_node !== FALSE && $theme_node != '-content_wide-') {

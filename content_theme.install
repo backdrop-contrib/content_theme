@@ -111,8 +111,8 @@ function content_theme_update_1001() {
 
   config('content_theme.content_wide')
     ->setData(array(
-      'edit' => variable_get('content_theme_content_wide_edit', '0'),
-      'view' => variable_get('content_theme_content_wide_view', '0'),
+      'content_theme_edit' => variable_get('content_theme_content_wide_edit', '0'),
+      'content_theme_view' => variable_get('content_theme_content_wide_view', '0'),
     ))
     ->save();
 
