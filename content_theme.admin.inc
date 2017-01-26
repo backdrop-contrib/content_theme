@@ -22,14 +22,14 @@ function content_theme_admin_content_wide($form, &$form_state) {
   $form['update']['content_theme_edit'] = array(
     '#type' => 'select',
     '#title' => t('Creating & editing theme'),
-    '#description' => t('Choose which theme the content creating and editing pages should display in. Default theme: %default_theme.', array('%default_theme' => t('System default theme'))),
+    '#description' => t('Choose which theme the content creating and editing pages should display in. Default: %default_theme.', array('%default_theme' => t('System default theme'))),
     '#default_value' => config_get('content_theme.content_wide', 'content_theme_edit'),
     '#options' => content_theme_get_themes_options_content_wide(),
   );
   $form['update']['content_theme_view'] = array(
     '#type' => 'select',
     '#title' => t('Viewing theme'),
-    '#description' => t('Choose which theme the content viewing pages should display in. Default theme: %default_theme.', array('%default_theme' => t('System default theme'))),
+    '#description' => t('Choose which theme the content viewing pages should display in. Default: %default_theme.', array('%default_theme' => t('System default theme'))),
     '#default_value' => config_get('content_theme.content_wide', 'content_theme_view'),
     '#options' => content_theme_get_themes_options_content_wide(),
   );
@@ -96,14 +96,14 @@ function content_theme_admin_content_type($form, &$form_state) {
   $form['update']['content_theme_edit'] = array(
     '#type' => 'select',
     '#title' => t('Creating & editing theme'),
-    '#description' => t('Choose which theme the content creating and editing pages should display in. Default theme: %default_theme.', array('%default_theme' => t('Content wide theme'))),
+    '#description' => t('Choose which theme the content creating and editing pages should display in. Default: %default_theme.', array('%default_theme' => t('Content wide theme'))),
     '#default_value' => '-no_update-',
     '#options' => array('-no_update-' => '- ' . t('No update') . ' -') + content_theme_get_themes_options_content_type(),
   );
   $form['update']['content_theme_view'] = array(
     '#type' => 'select',
     '#title' => t('Viewing theme'),
-    '#description' => t('Choose which theme the content viewing pages should display in. Default theme: %default_theme.', array('%default_theme' => t('Content wide theme'))),
+    '#description' => t('Choose which theme the content viewing pages should display in. Default: %default_theme.', array('%default_theme' => t('Content wide theme'))),
     '#default_value' => '-no_update-',
     '#options' => array('-no_update-' => '- ' . t('No update') . ' -') + content_theme_get_themes_options_content_type(),
   );
@@ -177,10 +177,9 @@ function content_theme_admin_content_node($form, &$form_state) {
 
   foreach ($result as $node) {
 
-    $theme = db_query('SELECT theme FROM {content_theme_node} WHERE nid = :nid AND action = :action', array(':nid' => $node->nid, ':action' => 'edit'))->fetchField();
-    $theme_edit = $theme !== FALSE ? $theme : '-content_type-';
-    $theme = db_query('SELECT theme FROM {content_theme_node} WHERE nid = :nid AND action = :action', array(':nid' => $node->nid, ':action' => 'view'))->fetchField();
-    $theme_view = $theme !== FALSE ? $theme : '-content_type-';
+    $content_theme_node = db_query('SELECT theme_edit, theme_view FROM {content_theme_node} WHERE nid = :nid', array(':nid' => $node->nid))->fetchObject();
+    $theme_edit = !empty($content_theme_node) ? $content_theme_node->theme_edit : '-content_type-';
+    $theme_view = !empty($content_theme_node) ? $content_theme_node->theme_view : '-content_type-';
 
     $row['title'] = array(
       'data' => array(
@@ -219,14 +218,14 @@ function content_theme_admin_content_node($form, &$form_state) {
   $form['update']['content_theme_edit'] = array(
     '#type' => 'select',
     '#title' => t('Editing theme'),
-    '#description' => t('Choose which theme the content editing pages should display in. Default theme: %default_theme.', array('%default_theme' => t('Content type theme'))),
+    '#description' => t('Choose which theme the content editing pages should display in. Default: %default_theme.', array('%default_theme' => t('Content type theme'))),
     '#default_value' => '-no_update-',
     '#options' => array('-no_update-' => '- ' . t('No update') . ' -') + content_theme_get_themes_options_content_node(),
   );
   $form['update']['content_theme_view'] = array(
     '#type' => 'select',
     '#title' => t('Viewing theme'),
-    '#description' => t('Choose which theme the content viewing pages should display in. Default theme: %default_theme.', array('%default_theme' => t('Content type theme'))),
+    '#description' => t('Choose which theme the content viewing pages should display in. Default: %default_theme.', array('%default_theme' => t('Content type theme'))),
     '#default_value' => '-no_update-',
     '#options' => array('-no_update-' => '- ' . t('No update') . ' -') + content_theme_get_themes_options_content_node(),
   );
@@ -262,28 +261,29 @@ function content_theme_admin_content_node_submit($form, &$form_state) {
 
   foreach (array_filter($values['nodes']) as $nid) {
 
+    $content_theme_node = db_query('SELECT theme_edit, theme_view FROM {content_theme_node} WHERE nid = :nid', array(':nid' => $nid))->fetchObject();
+    $theme_edit = !empty($content_theme_node) ? $content_theme_node->theme_edit : '-content_type-';
+    $theme_view = !empty($content_theme_node) ? $content_theme_node->theme_view : '-content_type-';
+
     if ($values['content_theme_edit'] != '-no_update-') {
-      db_delete('content_theme_node')
-        ->condition('nid', $nid)
-        ->condition('action', 'edit')
-        ->execute();
-      if ($values['content_theme_edit'] != '-content_type-') {
-        db_insert('content_theme_node')
-          ->fields(array('nid' => $nid, 'action' => 'edit', 'theme' => $values['content_theme_edit']))
-          ->execute();
-      }
+      $theme_edit = $values['content_theme_edit'];
+    }
+    if ($values['content_theme_view'] != '-no_update-') {
+      $theme_view = $values['content_theme_view'];
     }
 
-    if ($values['content_theme_view'] != '-no_update-') {
-      db_delete('content_theme_node')
-        ->condition('nid', $nid)
-        ->condition('action', 'view')
+    db_delete('content_theme_node')
+      ->condition('nid', $nid)
+      ->execute();
+
+    if ($theme_edit != '-content_type-' || $theme_view != '-content_type-') {
+      db_insert('content_theme_node')
+        ->fields(array(
+          'nid' => $nid,
+          'theme_edit' => $theme_edit,
+          'theme_view' => $theme_view,
+        ))
         ->execute();
-      if ($values['content_theme_view'] != '-content_type-') {
-        db_insert('content_theme_node')
-          ->fields(array('nid' => $nid, 'action' => 'view', 'theme' => $values['content_theme_view']))
-          ->execute();
-      }
     }
   }
 

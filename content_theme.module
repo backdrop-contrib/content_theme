@@ -75,7 +75,6 @@ function content_theme_menu() {
  * Implements hook_custom_theme().
  */
 function content_theme_custom_theme() {
-
   $arg = arg();
 
   if ($arg[0] == 'node' && (is_numeric($arg[1]) || ($arg[1] == 'add' && !is_null($arg[2])))) {
@@ -88,14 +87,14 @@ function content_theme_custom_theme() {
     elseif (isset($arg[2]) && $arg[2] == 'edit') {
       $type_name = db_query('SELECT type FROM {node} WHERE nid = :nid', array(':nid' => $arg[1]))->fetchField();
 
-      $theme_node = db_query('SELECT theme FROM {content_theme_node} WHERE nid = :nid AND action = :action', array(':nid' => $arg[1], ':action' => 'edit'))->fetchField();
+      $theme_node = db_query('SELECT theme_edit FROM {content_theme_node} WHERE nid = :nid', array(':nid' => $arg[1]))->fetchField();
       $theme_type = config_get('node.type.' . $type_name, 'settings.content_theme_edit');
       $theme_wide = config_get('content_theme.content_wide', 'content_theme_edit');
     }
     else {
       $type_name = db_query('SELECT type FROM {node} WHERE nid = :nid', array(':nid' => $arg[1]))->fetchField();
 
-      $theme_node = db_query('SELECT theme FROM {content_theme_node} WHERE nid = :nid AND action = :action', array(':nid' => $arg[1], ':action' => 'view'))->fetchField();
+      $theme_node = db_query('SELECT theme_view FROM {content_theme_node} WHERE nid = :nid', array(':nid' => $arg[1]))->fetchField();
       $theme_type = config_get('node.type.' . $type_name, 'settings.content_theme_view');
       $theme_wide = config_get('content_theme.content_wide', 'content_theme_view');
     }
@@ -152,9 +151,9 @@ function content_theme_node_type_load(&$types) {
  * Configure content type themes.
  */
 function content_theme_form_node_type_form_alter(&$form, $form_state) {
-  $node_type = $form['#node_type'];
 
   if (isset($form['type'])) {
+    $node_type = $form['#node_type'];
 
     $form['content_theme'] = array(
       '#type' => 'fieldset',
@@ -167,7 +166,7 @@ function content_theme_form_node_type_form_alter(&$form, $form_state) {
         'class' => array('content-theme-settings-form'),
       ),
       '#attached' => array(
-        'js' => array(backdrop_get_path('module', 'content_theme') . '/scripts/content_theme.admin.js'),
+        'js' => array(backdrop_get_path('module', 'content_theme') . '/scripts/content_theme.js'),
       ),
       '#access' => user_access('administer themes'),
       '#weight' => 40,
@@ -175,14 +174,14 @@ function content_theme_form_node_type_form_alter(&$form, $form_state) {
     $form['content_theme']['content_theme_edit'] = array(
       '#type' => 'select',
       '#title' => t('Creating & editing theme'),
-      '#description' => t('Choose which theme the content creating and editing pages should display in. Default theme: %default_theme.', array('%default_theme' => t('Content wide theme'))),
+      '#description' => t('Choose which theme the content creating and editing pages should display in. Default: %default_theme.', array('%default_theme' => t('Content wide theme'))),
       '#default_value' => $node_type->settings['content_theme_edit'],
       '#options' => content_theme_get_themes_options_content_type(),
     );
     $form['content_theme']['content_theme_view'] = array(
       '#type' => 'select',
       '#title' => t('Viewing theme'),
-      '#description' => t('Choose which theme the content viewing pages should display in. Default theme: %default_theme.', array('%default_theme' => t('Content wide theme'))),
+      '#description' => t('Choose which theme the content viewing pages should display in. Default: %default_theme.', array('%default_theme' => t('Content wide theme'))),
       '#default_value' => $node_type->settings['content_theme_view'],
       '#options' => content_theme_get_themes_options_content_type(),
     );
@@ -197,11 +196,9 @@ function content_theme_node_load($nodes, $types) {
 
   foreach ($nodes as $nid => $node) {
 
-    $theme = db_query('SELECT theme FROM {content_theme_node} WHERE nid = :nid AND action = :action', array(':nid' => $node->nid, ':action' => 'edit'))->fetchField();
-    $nodes[$nid]->content_theme_edit = $theme !== FALSE ? $theme : '-content_type-';
-
-    $theme = db_query('SELECT theme FROM {content_theme_node} WHERE nid = :nid AND action = :action', array(':nid' => $node->nid, ':action' => 'view'))->fetchField();
-    $nodes[$nid]->content_theme_view = $theme !== FALSE ? $theme : '-content_type-';
+    $content_theme_node = db_query('SELECT theme_edit, theme_view FROM {content_theme_node} WHERE nid = :nid', array(':nid' => $node->nid))->fetchObject();
+    $nodes[$nid]->content_theme_edit = !empty($content_theme_node) ? $content_theme_node->theme_edit : '-content_type-';
+    $nodes[$nid]->content_theme_view = !empty($content_theme_node) ? $content_theme_node->theme_view : '-content_type-';
   }
 }
 
@@ -211,15 +208,13 @@ function content_theme_node_load($nodes, $types) {
  */
 function content_theme_node_insert(Node $node) {
 
-  if ($node->content_theme_edit != '-content_type-') {
+  if ($node->content_theme_edit != '-content_type-' || $node->content_theme_view != '-content_type-') {
     db_insert('content_theme_node')
-      ->fields(array('nid' => $node->nid, 'action' => 'edit', 'theme' => $node->content_theme_edit))
-      ->execute();
-  }
-
-  if ($node->content_theme_view != '-content_type-') {
-    db_insert('content_theme_node')
-      ->fields(array('nid' => $node->nid, 'action' => 'view', 'theme' => $node->content_theme_view))
+      ->fields(array(
+        'nid' => $node->nid,
+        'theme_edit' => $node->content_theme_edit,
+        'theme_view' => $node->content_theme_view
+      ))
       ->execute();
   }
 }
@@ -273,7 +268,7 @@ function content_theme_form_node_form_alter(&$form, $form_state) {
   $form['content_theme']['content_theme_edit'] = array(
     '#type' => 'select',
     '#title' => t('Editing theme'),
-    '#description' => t('Choose which theme the content creating and editing pages should display in.'),
+    '#description' => t('Choose which theme the content creating and editing pages should display in. Default: %default_theme.', array('%default_theme' => t('Content type theme'))),
     '#default_value' => isset($node->content_theme_edit) ? $node->content_theme_edit : '-content_type-',
     '#options' => content_theme_get_themes_options_content_node(),
     '#access' => user_access('select '. $node->type .' content editing theme'),
@@ -281,7 +276,7 @@ function content_theme_form_node_form_alter(&$form, $form_state) {
   $form['content_theme']['content_theme_view'] = array(
     '#type' => 'select',
     '#title' => t('Viewing theme'),
-    '#description' => t('Choose which theme the content viewing pages should display in.'),
+    '#description' => t('Choose which theme the content viewing pages should display in. Default: %default_theme.', array('%default_theme' => t('Content type theme'))),
     '#default_value' => isset($node->content_theme_view) ? $node->content_theme_view : '-content_type-',
     '#options' => content_theme_get_themes_options_content_node(),
     '#access' => user_access('select '. $node->type .' content viewing theme'),

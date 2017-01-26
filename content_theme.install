@@ -12,30 +12,30 @@
 function content_theme_schema() {
 
   $schema['content_theme_node'] = array(
-    'description' => 'Stores themes when creating, editing, or viewing content.',
+    'description' => 'Stores themes which are assigned to content nodes.',
     'fields' => array(
       'ctnid' => array(
-        'description' => 'Primary Key: Unique content node theme ID.',
+        'description' => 'Primary Key: Unique content theme node ID.',
         'type' => 'serial',
         'unsigned' => TRUE,
         'not null' => TRUE,
       ),
       'nid' => array(
-        'description' => 'Node id to which the theme is assigned.',
+        'description' => 'Node ID to which the editing and viewing themes are assigned.',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
       ),
-      'action' => array(
-        'description' => 'Node action to which the theme is assigned.',
+      'theme_edit' => array(
+        'description' => 'Editing theme.',
         'type' => 'varchar',
-        'length' => 32,
+        'length' => 255,
         'not null' => TRUE,
         'default' => '',
       ),
-      'theme' => array(
-        'description' => 'Theme name.',
+      'theme_view' => array(
+        'description' => 'Viewing theme.',
         'type' => 'varchar',
         'length' => 255,
         'not null' => TRUE,
@@ -44,10 +44,7 @@ function content_theme_schema() {
     ),
     'primary key' => array('ctnid'),
     'unique keys' => array(
-      'node_action' => array('nid', 'action'),
-    ),
-    'indexes' => array(
-      'list' => array('nid', 'action', 'theme'),
+      'nid' => array('nid'),
     ),
   );
 
@@ -145,4 +142,67 @@ function content_theme_update_1003() {
   variable_del('content_theme_content_wide_list');
   variable_del('content_theme_content_type_list');
   variable_del('content_theme_content_node_list');
+}
+
+/**
+ * Update from Drupal: Update to new schema of {content_theme_node}.
+ */
+function content_theme_update_1004() {
+
+  db_drop_index('content_theme_node', 'list');
+  db_drop_unique_key('content_theme_node', 'node_action');
+
+  db_add_field('content_theme_node', 'theme_edit', array(
+    'description' => 'Editing theme.',
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => TRUE,
+    'default' => '',
+  ));
+  db_add_field('content_theme_node', 'theme_view', array(
+    'description' => 'Viewing theme.',
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => TRUE,
+    'default' => '',
+  ));
+
+  $prev_ctnid = 0;
+  $prev_nid = 0;
+
+  $result = db_query('SELECT * FROM {content_theme_node} ORDER BY nid');
+  foreach ($result as $record) {
+
+    if ($record->nid != $prev_nid) {
+      // Update current row.
+      db_update('content_theme_node')
+        ->fields(array(
+          'theme_edit' => $record->action == 'edit' ? $record->theme : '-content_type-',
+          'theme_view' => $record->action == 'view' ? $record->theme : '-content_type-',
+        ))
+        ->condition('ctnid', $record->ctnid)
+        ->execute();
+
+      $prev_ctnid = $record->ctnid;
+      $prev_nid = $record->nid;
+    }
+    else {
+      // Update previous row.
+      db_update('content_theme_node')
+        ->fields(array(
+          'theme_'. $record->action => $record->theme,
+        ))
+        ->condition('ctnid', $prev_ctnid)
+        ->execute();
+      // Delete current row.
+      db_delete('content_theme_node')
+        ->condition('ctnid', $record->ctnid)
+        ->execute();
+    }
+  }
+
+  db_drop_field('content_theme_node', 'action');
+  db_drop_field('content_theme_node', 'theme');
+
+  db_add_unique_key('content_theme_node', 'nid', array('nid'));
 }
