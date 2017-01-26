@@ -2,8 +2,8 @@
 Content Theme
 =============
 
-This module allows to use different themes than the site default on content
-creating, editing, and viewing pages.
+Allows to use different themes than the site default on content creating,
+editing, and viewing pages.
 
 Installation
 ------------
