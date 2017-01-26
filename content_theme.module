@@ -76,22 +76,28 @@ function content_theme_menu() {
  */
 function content_theme_custom_theme() {
 
-  if (arg(0) == 'node' && (is_numeric(arg(1)) || (arg(1) == 'add' && !is_null(arg(2))))) {
+  $arg = arg();
 
-    if (arg(1) == 'add') {
+  if ($arg[0] == 'node' && (is_numeric($arg[1]) || ($arg[1] == 'add' && !is_null($arg[2])))) {
+
+    if ($arg[1] == 'add') {
       $theme_node = FALSE;
-      $theme_type = variable_get('content_theme_content_type_edit_'. str_replace('-', '_', arg(2)), '-content_wide-');
-      $theme_wide = variable_get('content_theme_content_wide_edit', '0');
+      $theme_type = config_get('node.type.' . strtr($arg[2], array('-' => '_')), 'settings.content_theme_edit');
+      $theme_wide = config_get('content_theme.content_wide', 'edit');
     }
-    elseif (arg(2) == 'edit') {
-      $theme_node = db_query('SELECT theme FROM {content_theme_node} WHERE nid = :nid AND action = :action', array(':nid' => arg(1), ':action' => 'edit'))->fetchField();
-      $theme_type = variable_get('content_theme_content_type_edit_'. db_query('SELECT type FROM {node} WHERE nid = :nid', array(':nid' => arg(1)))->fetchField(), '-content_wide-');
-      $theme_wide = variable_get('content_theme_content_wide_edit', '0');
+    elseif (isset($arg[2]) && $arg[2] == 'edit') {
+      $type_name = db_query('SELECT type FROM {node} WHERE nid = :nid', array(':nid' => $arg[1]))->fetchField();
+
+      $theme_node = db_query('SELECT theme FROM {content_theme_node} WHERE nid = :nid AND action = :action', array(':nid' => $arg[1], ':action' => 'edit'))->fetchField();
+      $theme_type = config_get('node.type.' . $type_name, 'settings.content_theme_edit');
+      $theme_wide = config_get('content_theme.content_wide', 'edit');
     }
     else {
-      $theme_node = db_query('SELECT theme FROM {content_theme_node} WHERE nid = :nid AND action = :action', array(':nid' => arg(1), ':action' => 'view'))->fetchField();
-      $theme_type = variable_get('content_theme_content_type_view_'. db_query('SELECT type FROM {node} WHERE nid = :nid', array(':nid' => arg(1)))->fetchField(), '-content_wide-');
-      $theme_wide = variable_get('content_theme_content_wide_view', '0');
+      $type_name = db_query('SELECT type FROM {node} WHERE nid = :nid', array(':nid' => $arg[1]))->fetchField();
+
+      $theme_node = db_query('SELECT theme FROM {content_theme_node} WHERE nid = :nid AND action = :action', array(':nid' => $arg[1], ':action' => 'view'))->fetchField();
+      $theme_type = config_get('node.type.' . $type_name, 'settings.content_theme_view');
+      $theme_wide = config_get('content_theme.content_wide', 'view');
     }
 
     if ($theme_node !== FALSE && $theme_node != '-content_wide-') {
@@ -112,99 +118,75 @@ function content_theme_custom_theme() {
 
 
 /**
+ * Implements hook_config_info().
+ */
+function content_theme_config_info() {
+
+  $prefixes['content_theme.content_wide'] = array(
+    'label' => t('Content wide settings'),
+    'group' => t('Content theme'),
+  );
+
+  return $prefixes;
+}
+
+
+/**
+ * Implements hook_node_type_load().
+ */
+function content_theme_node_type_load(&$types) {
+
+  foreach ($types as $type_name => $type) {
+
+    $types[$type_name]->settings += array(
+      'content_theme_edit' => '-content_wide-',
+      'content_theme_view' => '-content_wide-',
+    );
+  }
+}
+
+
+/**
  * Implements hook_form_FORM_ID_alter().
+ *
+ * Configure content type themes.
  */
 function content_theme_form_node_type_form_alter(&$form, $form_state) {
+  $node_type = $form['#node_type'];
 
-  $edit_theme = variable_get('content_theme_content_type_edit_'. $form['#node_type']->type, '-content_wide-');
-  $view_theme = variable_get('content_theme_content_type_view_'. $form['#node_type']->type, '-content_wide-');
+  if (isset($form['type'])) {
 
-  // Add content type theme options to content type form.
-  $form['content_theme'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Content theme settings'),
-    '#description' => t('Applies to all content based on this content type and overrides content wide themes and the system default. But these settings can be overridden by content node settings.'),
-    '#collapsible' => TRUE,
-    '#collapsed' => $edit_theme == '-content_wide-' && $view_theme == '-content_wide-',
-    '#group' => 'additional_settings',
-    '#attributes' => array(
-      'class' => array('content-theme-content-type-form'),
-    ),
-    '#attached' => array(
-      'js' => array(backdrop_get_path('module', 'content_theme') . '/scripts/content_theme.js'),
-    ),
-  );
-  $form['content_theme']['content_theme_content_type_edit'] = array(
-    '#type' => 'select',
-    '#title' => t('Creating & editing theme'),
-    '#description' => t('Choose which theme the content creating and editing pages should display in. Content wide theme: %content_wide_theme; system default theme: %system_default_theme.', array('%content_wide_theme' => content_theme_get_info_theme_name('content_wide', 'edit'), '%system_default_theme' => content_theme_get_info_theme_name())),
-    '#default_value' => $edit_theme,
-    '#options' => content_theme_get_content_type_options(),
-  );
-  $form['content_theme']['content_theme_content_type_view'] = array(
-    '#type' => 'select',
-    '#title' => t('Viewing theme'),
-    '#description' => t('Choose which theme the content viewing pages should display in. Content wide theme: %content_wide_theme; system default theme: %system_default_theme.', array('%content_wide_theme' => content_theme_get_info_theme_name('content_wide', 'view'), '%system_default_theme' => content_theme_get_info_theme_name())),
-    '#default_value' => $view_theme,
-    '#options' => content_theme_get_content_type_options(),
-  );
-}
-
-
-/**
- * Implements hook_node_type_delete().
- */
-function content_theme_node_type_delete($info) {
-
-  variable_del('content_theme_content_type_edit_' . $info->type);
-  variable_del('content_theme_content_type_view_' . $info->type);
-}
-
-
-/**
- * Implements hook_form_BASE_FORM_ID_alter().
- */
-function content_theme_form_node_form_alter(&$form, $form_state) {
-
-  $edit_theme = isset($form['#node']->content_theme_content_node_edit) ? $form['#node']->content_theme_content_node_edit : '-content_type-';
-  $view_theme = isset($form['#node']->content_theme_content_node_view) ? $form['#node']->content_theme_content_node_view : '-content_type-';
-
-  $edit_access = user_access('select '. $form['type']['#value'] .' content editing theme');
-  $view_access = user_access('select '. $form['type']['#value'] .' content viewing theme');
-
-  // Add content node theme options to content node form.
-  $form['content_theme'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Content theme settings'),
-    '#description' => t('Applies only to this content node and overrides the content type themes, content wide themes, and the system default.'),
-    '#collapsible' => TRUE,
-    '#collapsed' => $edit_theme == '-content_type-' && $view_theme == '-content_type-',
-    '#group' => 'additional_settings',
-    '#access' => $edit_access || $view_access,
-    '#weight' => 40,
-    '#attributes' => array(
-      'class' => array('content-theme-content-node-form'),
-    ),
-    '#attached' => array(
-      'js' => array(backdrop_get_path('module', 'content_theme') . '/scripts/content_theme.js'),
-    ),
-  );
-  $form['content_theme']['content_theme_content_node_edit'] = array(
-    '#type' => 'select',
-    '#title' => t('Editing theme'),
-    '#description' => t('Choose which theme the content creating and editing pages should display in. Content type theme: %content_type_theme; content wide theme: %content_wide_theme; system default theme: %system_default_theme.', array('%content_type_theme' => content_theme_get_info_theme_name('content_type', 'edit', $form['type']['#value']), '%content_wide_theme' => content_theme_get_info_theme_name('content_wide', 'edit'), '%system_default_theme' => content_theme_get_info_theme_name())),
-    '#default_value' => $edit_theme,
-    '#options' => content_theme_get_content_node_options(),
-    '#access' => $edit_access,
-  );
-  $form['content_theme']['content_theme_content_node_view'] = array(
-    '#type' => 'select',
-    '#title' => t('Viewing theme'),
-    '#description' => t('Choose which theme the content viewing pages should display in. Content type theme: %content_type_theme; content wide theme: %content_wide_theme; system default theme: %system_default_theme.', array('%content_type_theme' => content_theme_get_info_theme_name('content_type', 'view', $form['type']['#value']), '%content_wide_theme' => content_theme_get_info_theme_name('content_wide', 'view'), '%system_default_theme' => content_theme_get_info_theme_name())),
-    '#default_value' => $view_theme,
-    '#options' => content_theme_get_content_node_options(),
-    '#access' => $view_access,
-  );
+    $form['content_theme'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Content theme settings'),
+      '#description' => t('Applies to all content based on this content type and overrides content wide themes and the system default. But these settings can be overridden by content node settings.'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+      '#group' => 'additional_settings',
+      '#attributes' => array(
+        'class' => array('content-theme-settings-form'),
+      ),
+      '#attached' => array(
+        'js' => array(backdrop_get_path('module', 'content_theme') . '/scripts/content_theme.admin.js'),
+      ),
+      '#access' => user_access('administer themes'),
+      '#weight' => 40,
+    );
+    $form['content_theme']['content_theme_edit'] = array(
+      '#type' => 'select',
+      '#title' => t('Creating & editing theme'),
+      '#description' => t('Choose which theme the content creating and editing pages should display in. Default theme: %default_theme.', array('%default_theme' => t('Content wide theme'))),
+      '#default_value' => $node_type->settings['content_theme_edit'],
+      '#options' => content_theme_get_themes_options_content_type(),
+    );
+    $form['content_theme']['content_theme_view'] = array(
+      '#type' => 'select',
+      '#title' => t('Viewing theme'),
+      '#description' => t('Choose which theme the content viewing pages should display in. Default theme: %default_theme.', array('%default_theme' => t('Content wide theme'))),
+      '#default_value' => $node_type->settings['content_theme_view'],
+      '#options' => content_theme_get_themes_options_content_type(),
+    );
+  }
 }
 
 
@@ -214,19 +196,12 @@ function content_theme_form_node_form_alter(&$form, $form_state) {
 function content_theme_node_load($nodes, $types) {
 
   foreach ($nodes as $nid => $node) {
-    $nodes[$nid]->content_theme_content_node_edit = '-content_type-';
-    $nodes[$nid]->content_theme_content_node_view = '-content_type-';
-  }
 
-  $result = db_query('SELECT nid, action, theme FROM {content_theme_node} WHERE nid IN (:nids)', array(':nids' =>  array_keys($nodes)));
-  foreach ($result as $record) {
+    $theme = db_query('SELECT theme FROM {content_theme_node} WHERE nid = :nid AND action = :action', array(':nid' => $node->nid, ':action' => 'edit'))->fetchField();
+    $nodes[$nid]->content_theme_edit = $theme !== FALSE ? $theme : '-content_type-';
 
-    if ($record->action == 'edit') {
-      $nodes[$record->nid]->content_theme_content_node_edit = $record->theme;
-    }
-    if ($record->action == 'view') {
-      $nodes[$record->nid]->content_theme_content_node_view = $record->theme;
-    }
+    $theme = db_query('SELECT theme FROM {content_theme_node} WHERE nid = :nid AND action = :action', array(':nid' => $node->nid, ':action' => 'view'))->fetchField();
+    $nodes[$nid]->content_theme_view = $theme !== FALSE ? $theme : '-content_type-';
   }
 }
 
@@ -234,19 +209,17 @@ function content_theme_node_load($nodes, $types) {
 /**
  * Implements hook_node_insert().
  */
-function content_theme_node_insert($node) {
+function content_theme_node_insert(Node $node) {
 
-  $theme = isset($node->content_theme_content_node_edit) ? $node->content_theme_content_node_edit : '-content_type-';
-  if ($theme != '-content_type-') {
+  if ($node->content_theme_edit != '-content_type-') {
     db_insert('content_theme_node')
-      ->fields(array('nid' => $node->nid, 'action' => 'edit', 'theme' => $theme))
+      ->fields(array('nid' => $node->nid, 'action' => 'edit', 'theme' => $node->content_theme_edit))
       ->execute();
   }
 
-  $theme = isset($node->content_theme_content_node_view) ? $node->content_theme_content_node_view : '-content_type-';
-  if ($theme != '-content_type-') {
+  if ($node->content_theme_view != '-content_type-') {
     db_insert('content_theme_node')
-      ->fields(array('nid' => $node->nid, 'action' => 'view', 'theme' => $theme))
+      ->fields(array('nid' => $node->nid, 'action' => 'view', 'theme' => $node->content_theme_view))
       ->execute();
   }
 }
@@ -255,7 +228,7 @@ function content_theme_node_insert($node) {
 /**
  * Implements hook_node_update().
  */
-function content_theme_node_update($node) {
+function content_theme_node_update(Node $node) {
 
   content_theme_node_delete($node);
   content_theme_node_insert($node);
@@ -265,7 +238,7 @@ function content_theme_node_update($node) {
 /**
  * Implements hook_node_delete().
  */
-function content_theme_node_delete($node) {
+function content_theme_node_delete(Node $node) {
 
   db_delete('content_theme_node')
     ->condition('nid', $node->nid)
@@ -274,140 +247,147 @@ function content_theme_node_delete($node) {
 
 
 /**
+ * Implements hook_form_BASE_FORM_ID_alter().
+ *
+ * Configure content node themes.
+ */
+function content_theme_form_node_form_alter(&$form, $form_state) {
+  $node = $form['#node'];
+
+  $form['content_theme'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Content theme settings'),
+    '#description' => t('Applies only to this content node and overrides the content type themes, content wide themes, and the system default.'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    '#group' => 'additional_settings',
+    '#attributes' => array(
+      'class' => array('content-theme-settings-form'),
+    ),
+    '#attached' => array(
+      'js' => array(backdrop_get_path('module', 'content_theme') . '/scripts/content_theme.js'),
+    ),
+    '#access' => user_access('select '. $node->type .' content editing theme') || user_access('select '. $node->type .' content viewing theme'),
+    '#weight' => 40,
+  );
+  $form['content_theme']['content_theme_edit'] = array(
+    '#type' => 'select',
+    '#title' => t('Editing theme'),
+    '#description' => t('Choose which theme the content creating and editing pages should display in.'),
+    '#default_value' => isset($node->content_theme_edit) ? $node->content_theme_edit : '-content_type-',
+    '#options' => content_theme_get_themes_options_content_node(),
+    '#access' => user_access('select '. $node->type .' content editing theme'),
+  );
+  $form['content_theme']['content_theme_view'] = array(
+    '#type' => 'select',
+    '#title' => t('Viewing theme'),
+    '#description' => t('Choose which theme the content viewing pages should display in.'),
+    '#default_value' => isset($node->content_theme_view) ? $node->content_theme_view : '-content_type-',
+    '#options' => content_theme_get_themes_options_content_node(),
+    '#access' => user_access('select '. $node->type .' content viewing theme'),
+  );
+}
+
+
+/**
  * Helper functions.
  */
-function content_theme_get_content_wide_options() {
-
-  static $options = array();
-
-  if (!$options) {
-
-    $themes = content_theme_get_themes();
-    $list = variable_get('content_theme_content_wide_list', 'enabled');
-
-    $options['0'] = '- '. t('System default theme') .' -';
-    foreach ($themes as $theme => $theme_name) {
-      $status = content_theme_get_theme_status($theme);
-      if (($list == 'enabled' && $status) || $list == 'all') {
-        $options[$theme] = $status ? $theme_name : t('!theme (disabled)', array('!theme' => $theme_name));
-      }
-    }
-  }
-
-  return $options;
-}
-
-function content_theme_get_content_type_options() {
-
-  static $options = array();
-
-  if (!$options) {
-
-    $themes = content_theme_get_themes();
-    $list = variable_get('content_theme_content_type_list', 'enabled');
-
-    $options['0'] = '- '. t('System default theme') .' -';
-    $options['-content_wide-'] = '- '. t('Content wide theme') .' -';
-    foreach ($themes as $theme => $theme_name) {
-      $status = content_theme_get_theme_status($theme);
-      if (($list == 'enabled' && $status) || $list == 'all') {
-        $options[$theme] = $status ? $theme_name : t('!theme (disabled)', array('!theme' => $theme_name));
-      }
-    }
-  }
-
-  return $options;
-}
-
-function content_theme_get_content_node_options() {
-
-  static $options = array();
-
-  if (!$options) {
-
-    $themes = content_theme_get_themes();
-    $list = variable_get('content_theme_content_node_list', 'enabled');
-
-    $options['0'] = '- '. t('System default theme') .' -';
-    $options['-content_wide-'] = '- '. t('Content wide theme') .' -';
-    $options['-content_type-'] = '- '. t('Content type theme') .' -';
-    foreach ($themes as $theme => $theme_name) {
-      $status = content_theme_get_theme_status($theme);
-      if (($list == 'enabled' && $status) || $list == 'all') {
-        $options[$theme] = $status ? $theme_name : t('!theme (disabled)', array('!theme' => $theme_name));
-      }
-    }
-  }
-
-  return $options;
-}
-
-function content_theme_get_themes($theme = NULL) {
+function content_theme_get_themes() {
 
   static $themes = array();
 
   if (!$themes) {
 
-    foreach (system_rebuild_theme_data() as $theme_data) {
+    $result = db_query('SELECT name, status, info FROM {system} WHERE type = :type', array(':type' => 'theme'));
+    foreach ($result as $theme) {
+      $theme->info = unserialize($theme->info);
 
-      $visibility = empty($theme_data->info['hidden']);
-      $compatible_core = isset($theme_data->info['backdrop']) && $theme_data->info['backdrop'] == BACKDROP_CORE_COMPATIBILITY && isset($theme_data->info['regions']['content']);
-      $compatible_php = version_compare(phpversion(), $theme_data->info['php'], '>=');
-
-      if ($visibility && $compatible_core && $compatible_php) {
-        $themes[$theme_data->name] = $theme_data->info['name'];
+      if (empty($theme->info['hidden']) || !$theme->info['hidden']) {
+        $themes[$theme->name] = array(
+          'name' => $theme->name,
+          'label' => $theme->info['name'],
+          'status' => $theme->status,
+        );
       }
     }
-
-    asort($themes);
   }
 
-  return !is_null($theme) ? (isset($themes[$theme]) ? $themes[$theme] : $theme) : $themes;
+  return $themes;
 }
 
-function content_theme_get_theme_name($theme) {
+function content_theme_get_themes_list() {
 
   static $themes = array();
 
   if (!$themes) {
 
-    $themes['0'] = t('%system_default_theme', array('%system_default_theme' => 'System default theme'));
-    $themes['-content_wide-'] = t('%content_wide_theme', array('%content_wide_theme' => 'Content wide theme'));
-    $themes['-content_type-'] = t('%content_type_theme', array('%content_type_theme' => 'Content type theme'));
+    foreach (content_theme_get_themes() as $theme) {
+      $themes[$theme['name']] = $theme['label'];
+    }
+
+    asort($themes, SORT_NATURAL | SORT_FLAG_CASE);
+  }
+
+  return $themes;
+}
+
+function content_theme_get_themes_options_content_wide() {
+
+  $options['0'] = '<'. t('System default theme') .'>';
+  $options += content_theme_get_themes_list();
+
+  return $options;
+}
+
+function content_theme_get_themes_options_content_type() {
+
+  $options['0'] = '<'. t('System default theme') .'>';
+  $options['-content_wide-'] = '<'. t('Content wide theme') .'>';
+  $options += content_theme_get_themes_list();
+
+  return $options;
+}
+
+function content_theme_get_themes_options_content_node() {
+
+  $options['0'] = '<'. t('System default theme') .'>';
+  $options['-content_wide-'] = '<'. t('Content wide theme') .'>';
+  $options['-content_type-'] = '<'. t('Content type theme') .'>';
+  $options += content_theme_get_themes_list();
+
+  return $options;
+}
+
+function content_theme_get_theme_label($theme, $expand = FALSE) {
+
+  static $themes = array();
+
+  if (!$themes) {
+
+    $themes['0'] = array('label' => t('System default theme'), 'status' => 1);
+    $themes['-content_wide-'] = array('label' => t('Content wide theme'), 'status' => 1);
+    $themes['-content_type-'] = array('label' => t('Content type theme'), 'status' => 1);
     $themes += content_theme_get_themes();
   }
 
-  return isset($themes[$theme]) ? ($theme == '0' || $theme == '-content_wide-' || $theme == '-content_type-' || content_theme_get_theme_status($theme) ? $themes[$theme] : t('!theme (disabled)', array('!theme' => $themes[$theme]))) : t('!theme (not available)', array('!theme' => $theme));
-}
-
-function content_theme_get_info_theme_name($mode = 'system_default', $action = NULL, $type = NULL) {
-
-  $name = $system_default_theme = content_theme_get_theme_name(variable_get('theme_default', 'bartik'));
-
-  if ($mode == 'content_wide' || $mode == 'content_type') {
-    if ($action == 'edit' || $action == 'view') {
-      $theme = variable_get('content_theme_content_wide_'. $action, '0');
-      $name = ($theme != '0') ? content_theme_get_theme_name($theme) : $system_default_theme;
-
-      if ($mode == 'content_type') {
-        $theme = variable_get('content_theme_content_type_'. $action .'_'. $type, '-content_wide-');
-        if ($theme != '-content_wide-') {
-          $name = ($theme != '0') ? content_theme_get_theme_name($theme) : $system_default_theme;
-        }
-      }
-    }
-    else {
-      $name = t('%none', array('%none' => 'none'));
-    }
+  if (isset($themes[$theme])) {
+    $name = $expand && !$themes[$theme]['status'] ? check_plain($themes[$theme]['label']) . '<br><small>' . t('(Disabled)') . '</small>' : $themes[$theme]['label'];
+  }
+  else {
+    $name = $expand ? $theme . '<br><small>' . t('(Not available)') . '</small>' : $theme;
   }
 
   return $name;
 }
 
-function content_theme_get_theme_status($theme) {
+function content_theme_get_theme_label_placeholder($theme, $placeholder = FALSE) {
 
-  $system = db_query('SELECT status FROM {system} WHERE name = :name', array(':name' => $theme))
-    ->fetchObject();
+  if ($placeholder || $theme === '0' || $theme === '-content_wide-' || $theme === '-content_type-') {
+    $label = backdrop_placeholder(content_theme_get_theme_label($theme));
+  }
+  else {
+    $label = content_theme_get_theme_label($theme);
+  }
 
-  return $system->status;
+  return $label;
 }

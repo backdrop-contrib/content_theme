@@ -11,7 +11,6 @@
  */
 function content_theme_schema() {
 
-  $schema = array();
   $schema['content_theme_node'] = array(
     'description' => 'Stores themes when creating, editing, or viewing content.',
     'fields' => array(
@@ -61,10 +60,24 @@ function content_theme_schema() {
  */
 function content_theme_install() {
 
+  // Set module's weight to 40.
   db_update('system')
     ->fields(array('weight' => 40))
     ->condition('name', 'content_theme')
     ->execute();
+
+  // Add content type themes to config files of node types.
+  foreach (node_type_get_types() as $type => $value) {
+
+    $config = config('node.type.' . $type);
+    if (!is_null(config_get('node.type.' . $type, 'settings.content_theme_edit'))) {
+      $config->set('settings.content_theme_edit', '-content_wide-');
+    }
+    if (!is_null(config_get('node.type.' . $type, 'settings.content_theme_view'))) {
+      $config->set('settings.content_theme_view', '-content_wide-');
+    }
+    $config->save();
+  }
 }
 
 
@@ -73,23 +86,17 @@ function content_theme_install() {
  */
 function content_theme_uninstall() {
 
-  foreach (node_type_get_types() as $node_type => $value) {
-    variable_del('content_theme_content_type_edit_'. $node_type);
-    variable_del('content_theme_content_type_view_'. $node_type);
-  }
-  variable_del('content_theme_content_wide_edit');
-  variable_del('content_theme_content_wide_view');
 }
 
 
 /**
- * Branch 1.x.2.x
+ * Implements hook_update_N().
  */
 
 /**
- * Set module's weight to 40.
+ * Update from Drupal: Set module's weight to 40.
  */
-function content_theme_update_1200() {
+function content_theme_update_1000() {
 
   db_update('system')
     ->fields(array('weight' => 40))
@@ -98,9 +105,42 @@ function content_theme_update_1200() {
 }
 
 /**
- * Remove unnecessary variables.
+ * Update from Drupal: Create config file for content wide themes.
  */
-function content_theme_update_1201() {
+function content_theme_update_1001() {
+
+  config('content_theme.content_wide')
+    ->setData(array(
+      'edit' => variable_get('content_theme_content_wide_edit', '0'),
+      'view' => variable_get('content_theme_content_wide_view', '0'),
+    ))
+    ->save();
+
+  variable_del('content_theme_content_wide_edit');
+  variable_del('content_theme_content_wide_view');
+}
+
+/**
+ * Update from Drupal: Add content type themes to config files of node types.
+ */
+function content_theme_update_1002() {
+
+  foreach (node_type_get_types() as $type => $value) {
+
+    config('node.type.' . $type)
+      ->set('settings.content_theme_edit', variable_get('content_theme_content_type_edit_' . $type, '-content_wide-'))
+      ->set('settings.content_theme_view', variable_get('content_theme_content_type_view_' . $type, '-content_wide-'))
+      ->save();
+
+    variable_del('content_theme_content_type_edit_' . $type);
+    variable_del('content_theme_content_type_view_' . $type);
+  }
+}
+
+/**
+ * Update from Drupal: Remove obsolete settings variables.
+ */
+function content_theme_update_1003() {
 
   variable_del('content_theme_content_wide_list');
   variable_del('content_theme_content_type_list');
