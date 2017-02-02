@@ -124,8 +124,8 @@ function content_theme_update_1001() {
     ))
     ->save();
 
-  variable_del('content_theme_content_wide_edit');
-  variable_del('content_theme_content_wide_view');
+  update_variable_del('content_theme_content_wide_edit');
+  update_variable_del('content_theme_content_wide_view');
 }
 
 /**
@@ -143,19 +143,23 @@ function content_theme_update_1002() {
       ->set('settings.content_theme_view', $theme_view !== '0' ? $theme_view : '-system_default-')
       ->save();
 
-    variable_del('content_theme_content_type_edit_' . $name);
-    variable_del('content_theme_content_type_view_' . $name);
+    update_variable_del('content_theme_content_type_edit_' . $name);
+    update_variable_del('content_theme_content_type_view_' . $name);
   }
 }
 
 /**
- * Update from Drupal: Remove obsolete settings variables.
+ * Update from Drupal: Remove obsolete variables from the database.
  */
 function content_theme_update_1003() {
 
-  variable_del('content_theme_content_wide_list');
-  variable_del('content_theme_content_type_list');
-  variable_del('content_theme_content_node_list');
+  // Delete settings variables.
+  update_variable_del('content_theme_content_wide_list');
+  update_variable_del('content_theme_content_type_list');
+  update_variable_del('content_theme_content_node_list');
+
+  // Delete Content Theme Debugger variable.
+  update_variable_del('content_theme_debugger_blacklist');
 }
 
 /**
