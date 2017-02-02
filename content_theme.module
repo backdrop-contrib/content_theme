@@ -166,7 +166,7 @@ function content_theme_form_node_type_form_alter(&$form, $form_state) {
         'class' => array('content-theme-settings-form'),
       ),
       '#attached' => array(
-        'js' => array(backdrop_get_path('module', 'content_theme') . '/scripts/content_theme.js'),
+        'js' => array(backdrop_get_path('module', 'content_theme') . '/js/content_theme.js'),
       ),
       '#access' => user_access('administer themes'),
       '#weight' => 40,
@@ -260,7 +260,7 @@ function content_theme_form_node_form_alter(&$form, $form_state) {
       'class' => array('content-theme-settings-form'),
     ),
     '#attached' => array(
-      'js' => array(backdrop_get_path('module', 'content_theme') . '/scripts/content_theme.js'),
+      'js' => array(backdrop_get_path('module', 'content_theme') . '/js/content_theme.js'),
     ),
     '#access' => user_access('select '. $node->type .' content editing theme') || user_access('select '. $node->type .' content viewing theme'),
     '#weight' => 40,
