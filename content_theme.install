@@ -64,13 +64,13 @@ function content_theme_install() {
     ->execute();
 
   // Add content type themes to config files of node types.
-  foreach (node_type_get_types() as $type => $value) {
+  foreach (node_type_get_types() as $name => $type) {
 
-    $config = config('node.type.' . $type);
-    if (!is_null(config_get('node.type.' . $type, 'settings.content_theme_edit'))) {
+    $config = config('node.type.' . $name);
+    if (!is_null(config_get('node.type.' . $name, 'settings.content_theme_edit'))) {
       $config->set('settings.content_theme_edit', '-content_wide-');
     }
-    if (!is_null(config_get('node.type.' . $type, 'settings.content_theme_view'))) {
+    if (!is_null(config_get('node.type.' . $name, 'settings.content_theme_view'))) {
       $config->set('settings.content_theme_view', '-content_wide-');
     }
     $config->save();

@@ -13,14 +13,13 @@
 function content_theme_permission() {
 
   $perm = array();
-  foreach (node_type_get_types() as $type => $value) {
-    $info = node_type_get_type($type);
+  foreach (node_type_get_types() as $name => $type) {
 
-    $perm["select $type content editing theme"] = array(
-      'title' => t('%type_name: Select content editing theme', array('%type_name' => $info->name)),
+    $perm["select $name content editing theme"] = array(
+      'title' => t('%type_name: Select content editing theme', array('%type_name' => $type->name)),
     );
-    $perm["select $type content viewing theme"] = array(
-      'title' => t('%type_name: Select content viewing theme', array('%type_name' => $info->name)),
+    $perm["select $name content viewing theme"] = array(
+      'title' => t('%type_name: Select content viewing theme', array('%type_name' => $type->name)),
     );
   }
 
