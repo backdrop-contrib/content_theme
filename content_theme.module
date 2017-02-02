@@ -293,15 +293,13 @@ function content_theme_get_themes() {
 
   if (!$themes) {
 
-    $result = db_query('SELECT name, status, info FROM {system} WHERE type = :type', array(':type' => 'theme'));
-    foreach ($result as $theme) {
-      $theme->info = unserialize($theme->info);
+    foreach (list_themes() as $name => $theme) {
 
       if (empty($theme->info['hidden']) || !$theme->info['hidden']) {
-        $themes[$theme->name] = array(
-          'name' => $theme->name,
+        $themes[$name] = array(
+          'name' => $name,
           'label' => $theme->info['name'],
-          'status' => $theme->status,
+          'status' => $theme->status + 0,
         );
       }
     }
