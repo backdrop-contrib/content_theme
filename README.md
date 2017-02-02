@@ -33,7 +33,7 @@ Usage
   Content node themes applies only to its own content and override the content
   type themes, content wide themes, and the system default theme. Configure
   content node themes at its content node edit form or under Administration >
-  Appearance > Content theme > Content type.
+  Appearance > Content theme > Content node.
 
 Troubleshooting
 ---------------
