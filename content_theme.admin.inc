@@ -68,8 +68,8 @@ function content_theme_admin_content_type($form, &$form_state) {
   foreach (node_type_get_names() as $name => $label) {
 
     $row['type'] = check_plain($label);
-    $row['theme_edit'] = content_theme_get_theme_label_placeholder(config_get('node.type.' . $name, 'settings.content_theme_edit'));
-    $row['theme_view'] = content_theme_get_theme_label_placeholder(config_get('node.type.' . $name, 'settings.content_theme_view'));
+    $row['theme_edit'] = content_theme_get_theme_label_placeholder(config_get('node.type.' . $name, 'settings.content_theme_edit'), TRUE);
+    $row['theme_view'] = content_theme_get_theme_label_placeholder(config_get('node.type.' . $name, 'settings.content_theme_view'), TRUE);
     $row['operations']['data'] = array(
       '#type' => 'operations',
       '#links' => array(
@@ -189,8 +189,8 @@ function content_theme_admin_content_node($form, &$form_state) {
       ),
     );
     $row['type'] = check_plain(node_type_get_name($node));
-    $row['theme_edit'] = content_theme_get_theme_label_placeholder($theme_edit);
-    $row['theme_view'] = content_theme_get_theme_label_placeholder($theme_view);
+    $row['theme_edit'] = content_theme_get_theme_label_placeholder($theme_edit, TRUE);
+    $row['theme_view'] = content_theme_get_theme_label_placeholder($theme_view, TRUE);
     $row['changed'] = format_date($node->changed, 'short');
     $row['operations']['data'] = array(
       '#type' => 'operations',

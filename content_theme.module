@@ -315,7 +315,9 @@ function content_theme_get_themes_list() {
   if (!$themes) {
 
     foreach (content_theme_get_themes() as $theme) {
-      $themes[$theme['name']] = $theme['label'];
+      if ($theme['status']) {
+        $themes[$theme['name']] = $theme['label'];
+      }
     }
 
     asort($themes, SORT_NATURAL | SORT_FLAG_CASE);
@@ -373,13 +375,13 @@ function content_theme_get_theme_label($theme, $expand = FALSE) {
   return $name;
 }
 
-function content_theme_get_theme_label_placeholder($theme, $placeholder = FALSE) {
+function content_theme_get_theme_label_placeholder($theme, $expand = FALSE, $placeholder = FALSE) {
 
-  if ($placeholder || $theme == '-system_default-' || $theme == '-content_wide-' || $theme == '-content_type-') {
+  if ($theme == '-system_default-' || $theme == '-content_wide-' || $theme == '-content_type-' || $placeholder) {
     $label = backdrop_placeholder(content_theme_get_theme_label($theme));
   }
   else {
-    $label = content_theme_get_theme_label($theme);
+    $label = content_theme_get_theme_label($theme, $expand);
   }
 
   return $label;
