@@ -63,17 +63,17 @@ function content_theme_install() {
     ->condition('name', 'content_theme')
     ->execute();
 
-  // Add content type themes to config files of node types.
+  // Add content type themes to node type config files.
   foreach (node_type_get_types() as $name => $type) {
 
-    $config = config('node.type.' . $name);
-    if (!is_null(config_get('node.type.' . $name, 'settings.content_theme_edit'))) {
-      $config->set('settings.content_theme_edit', '-content_wide-');
+    $settings = config_get('node.type.' . $name, 'settings');
+    if (!isset($settings['content_theme_edit']) {
+      $settings['content_theme_edit'] = '-content_wide-';
     }
-    if (!is_null(config_get('node.type.' . $name, 'settings.content_theme_view'))) {
-      $config->set('settings.content_theme_view', '-content_wide-');
+    if (!isset($settings['content_theme_view']) {
+      $settings['content_theme_view'] = '-content_wide-';
     }
-    $config->save();
+    config_set('node.type.' . $name, 'settings', $settings);
   }
 }
 
@@ -83,6 +83,14 @@ function content_theme_install() {
  */
 function content_theme_uninstall() {
 
+  // Remove content type themes from node type config files.
+  foreach (node_type_get_types() as $name => $type) {
+
+    $settings = config_get('node.type.' . $name, 'settings');
+    unset($settings['content_theme_edit']);
+    unset($settings['content_theme_view']);
+    config_set('node.type.' . $name, 'settings', $settings);
+  }
 }
 
 
@@ -125,18 +133,18 @@ function content_theme_update_1001() {
  */
 function content_theme_update_1002() {
 
-  foreach (node_type_get_types() as $type => $value) {
+  foreach (node_type_get_types() as $name => $type) {
 
-    $theme_edit = variable_get('content_theme_content_type_edit_' . $type, '-content_wide-');
-    $theme_view = variable_get('content_theme_content_type_view_' . $type, '-content_wide-');
+    $theme_edit = variable_get('content_theme_content_type_edit_' . $name, '-content_wide-');
+    $theme_view = variable_get('content_theme_content_type_view_' . $name, '-content_wide-');
 
-    config('node.type.' . $type)
+    config('node.type.' . $name)
       ->set('settings.content_theme_edit', $theme_edit !== '0' ? $theme_edit : '-system_default-')
       ->set('settings.content_theme_view', $theme_view !== '0' ? $theme_view : '-system_default-')
       ->save();
 
-    variable_del('content_theme_content_type_edit_' . $type);
-    variable_del('content_theme_content_type_view_' . $type);
+    variable_del('content_theme_content_type_edit_' . $name);
+    variable_del('content_theme_content_type_view_' . $name);
   }
 }
 
@@ -195,9 +203,10 @@ function content_theme_update_1004() {
     }
     else {
       // Update previous row.
+      $theme = $record->theme !== '0' ? $record->theme : '-system_default-';
       db_update('content_theme_node')
         ->fields(array(
-          'theme_'. $record->action => $record->theme,
+          'theme_'. $record->action => $theme,
         ))
         ->condition('ctnid', $prev_ctnid)
         ->execute();
