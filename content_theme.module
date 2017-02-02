@@ -75,43 +75,43 @@ function content_theme_menu() {
  * Implements hook_custom_theme().
  */
 function content_theme_custom_theme() {
-  $arg = arg();
 
-  if ($arg[0] == 'node' && (is_numeric($arg[1]) || ($arg[1] == 'add' && !is_null($arg[2])))) {
+  if (arg(0) == 'node' && is_numeric(arg(1))) {
+    if (arg(2) == 'edit') {
+      // Edit content node.
 
-    if ($arg[1] == 'add') {
-      $theme_node = FALSE;
-      $theme_type = config_get('node.type.' . strtr($arg[2], array('-' => '_')), 'settings.content_theme_edit');
-      $theme_wide = config_get('content_theme.content_wide', 'content_theme_edit');
-    }
-    elseif (isset($arg[2]) && $arg[2] == 'edit') {
-      $type_name = db_query('SELECT type FROM {node} WHERE nid = :nid', array(':nid' => $arg[1]))->fetchField();
-
-      $theme_node = db_query('SELECT theme_edit FROM {content_theme_node} WHERE nid = :nid', array(':nid' => $arg[1]))->fetchField();
-      $theme_type = config_get('node.type.' . $type_name, 'settings.content_theme_edit');
-      $theme_wide = config_get('content_theme.content_wide', 'content_theme_edit');
+      $custom_theme = db_query('SELECT theme_edit FROM {content_theme_node} WHERE nid = :nid', array(':nid' => arg(1)))->fetchField();
+      if (is_null($custom_theme) || $custom_theme == '-content_type-' || $custom_theme == '-content_wide-' ) {
+        $type = db_query('SELECT type FROM {node} WHERE nid = :nid', array(':nid' => arg(1)))->fetchField();
+        $custom_theme = config_get('node.type.' . $type, 'settings.content_theme_edit');
+        if ($custom_theme == '-content_wide-') {
+          $custom_theme = config_get('content_theme.content_wide', 'content_theme_edit');
+        }
+      }
+      return $custom_theme != '-system_default-' ? $custom_theme : NULL;
     }
     else {
-      $type_name = db_query('SELECT type FROM {node} WHERE nid = :nid', array(':nid' => $arg[1]))->fetchField();
+      // View content node.
 
-      $theme_node = db_query('SELECT theme_view FROM {content_theme_node} WHERE nid = :nid', array(':nid' => $arg[1]))->fetchField();
-      $theme_type = config_get('node.type.' . $type_name, 'settings.content_theme_view');
-      $theme_wide = config_get('content_theme.content_wide', 'content_theme_view');
-    }
-
-    if ($theme_node !== FALSE && $theme_node != '-content_wide-') {
-      $custom_theme = $theme_node;
-    }
-    else {
-      if ($theme_type != '-content_wide-' && !$theme_node) {
-        $custom_theme = $theme_type;
+      $custom_theme = db_query('SELECT theme_view FROM {content_theme_node} WHERE nid = :nid', array(':nid' => arg(1)))->fetchField();
+      if (is_null($custom_theme) || $custom_theme == '-content_type-' || $custom_theme == '-content_wide-' ) {
+        $type = db_query('SELECT type FROM {node} WHERE nid = :nid', array(':nid' => arg(1)))->fetchField();
+        $custom_theme = config_get('node.type.' . $type, 'settings.content_theme_view');
+        if ($custom_theme == '-content_wide-') {
+          $custom_theme = config_get('content_theme.content_wide', 'content_theme_view');
+        }
       }
-      else {
-        $custom_theme = $theme_wide;
-      }
+      return $custom_theme != '-system_default-' ? $custom_theme : NULL;
     }
+  }
+  elseif (arg(0) == 'node' && arg(1) == 'add' && !is_null(arg(2))) {
+    // Add content node.
 
-    return $custom_theme;
+    $custom_theme = config_get('node.type.' . strtr(arg(2), array('-' => '_')), 'settings.content_theme_edit');
+    if ($custom_theme == '-content_wide-') {
+      $custom_theme = config_get('content_theme.content_wide', 'content_theme_edit');
+    }
+    return $custom_theme != '-system_default-' ? $custom_theme : NULL;
   }
 }
 
@@ -328,7 +328,7 @@ function content_theme_get_themes_list() {
 
 function content_theme_get_themes_options_content_wide() {
 
-  $options['0'] = '<'. t('System default theme') .'>';
+  $options['-system_default-'] = '<'. t('System default theme') .'>';
   $options += content_theme_get_themes_list();
 
   return $options;
@@ -336,7 +336,7 @@ function content_theme_get_themes_options_content_wide() {
 
 function content_theme_get_themes_options_content_type() {
 
-  $options['0'] = '<'. t('System default theme') .'>';
+  $options['-system_default-'] = '<'. t('System default theme') .'>';
   $options['-content_wide-'] = '<'. t('Content wide theme') .'>';
   $options += content_theme_get_themes_list();
 
@@ -345,7 +345,7 @@ function content_theme_get_themes_options_content_type() {
 
 function content_theme_get_themes_options_content_node() {
 
-  $options['0'] = '<'. t('System default theme') .'>';
+  $options['-system_default-'] = '<'. t('System default theme') .'>';
   $options['-content_wide-'] = '<'. t('Content wide theme') .'>';
   $options['-content_type-'] = '<'. t('Content type theme') .'>';
   $options += content_theme_get_themes_list();
@@ -359,7 +359,7 @@ function content_theme_get_theme_label($theme, $expand = FALSE) {
 
   if (!$themes) {
 
-    $themes['0'] = array('label' => t('System default theme'), 'status' => 1);
+    $themes['-system_default-'] = array('label' => t('System default theme'), 'status' => 1);
     $themes['-content_wide-'] = array('label' => t('Content wide theme'), 'status' => 1);
     $themes['-content_type-'] = array('label' => t('Content type theme'), 'status' => 1);
     $themes += content_theme_get_themes();
@@ -377,7 +377,7 @@ function content_theme_get_theme_label($theme, $expand = FALSE) {
 
 function content_theme_get_theme_label_placeholder($theme, $placeholder = FALSE) {
 
-  if ($placeholder || $theme === '0' || $theme === '-content_wide-' || $theme === '-content_type-') {
+  if ($placeholder || $theme == '-system_default-' || $theme == '-content_wide-' || $theme == '-content_type-') {
     $label = backdrop_placeholder(content_theme_get_theme_label($theme));
   }
   else {

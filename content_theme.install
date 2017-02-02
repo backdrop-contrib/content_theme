@@ -106,10 +106,13 @@ function content_theme_update_1000() {
  */
 function content_theme_update_1001() {
 
+  $theme_edit = variable_get('content_theme_content_wide_edit', '0');
+  $theme_view = variable_get('content_theme_content_wide_view', '0');
+
   config('content_theme.content_wide')
     ->setData(array(
-      'content_theme_edit' => variable_get('content_theme_content_wide_edit', '0'),
-      'content_theme_view' => variable_get('content_theme_content_wide_view', '0'),
+      'content_theme_edit' => $theme_edit !== '0' ? $theme_edit : '-system_default-',
+      'content_theme_view' => $theme_view !== '0' ? $theme_view : '-system_default-',
     ))
     ->save();
 
@@ -124,9 +127,12 @@ function content_theme_update_1002() {
 
   foreach (node_type_get_types() as $type => $value) {
 
+    $theme_edit = variable_get('content_theme_content_type_edit_' . $type, '-content_wide-');
+    $theme_view = variable_get('content_theme_content_type_view_' . $type, '-content_wide-');
+
     config('node.type.' . $type)
-      ->set('settings.content_theme_edit', variable_get('content_theme_content_type_edit_' . $type, '-content_wide-'))
-      ->set('settings.content_theme_view', variable_get('content_theme_content_type_view_' . $type, '-content_wide-'))
+      ->set('settings.content_theme_edit', $theme_edit !== '0' ? $theme_edit : '-system_default-')
+      ->set('settings.content_theme_view', $theme_view !== '0' ? $theme_view : '-system_default-')
       ->save();
 
     variable_del('content_theme_content_type_edit_' . $type);
@@ -175,10 +181,11 @@ function content_theme_update_1004() {
 
     if ($record->nid != $prev_nid) {
       // Update current row.
+      $theme = $record->theme !== '0' ? $record->theme : '-system_default-';
       db_update('content_theme_node')
         ->fields(array(
-          'theme_edit' => $record->action == 'edit' ? $record->theme : '-content_type-',
-          'theme_view' => $record->action == 'view' ? $record->theme : '-content_type-',
+          'theme_edit' => $record->action == 'edit' ? $theme : '-content_type-',
+          'theme_view' => $record->action == 'view' ? $theme : '-content_type-',
         ))
         ->condition('ctnid', $record->ctnid)
         ->execute();

@@ -1,6 +1,6 @@
 
 {
   "_config_name": "content_theme.content_wide",
-  "edit": "0",
-  "view": "0"
+  "content_theme_edit": "-system_default-",
+  "content_theme_view": "-system_default-"
 }
