@@ -9,18 +9,40 @@ Installation
 ------------
 
 - Install this module using the official Backdrop CMS instructions at
-  (https://backdropcms.org/guide/modules)
+  (https://backdropcms.org/guide/modules).
 
-- Visit the configuration page under Administration > Appearance > Content theme
-  (admin/appearance/content-theme) 
+- Enable this module under Administration > Functionality > Appearance.
+
+Usage
+-----
+
+- **Content wide themes**  
+  Content wide themes applies to all content and override the system default
+  theme. But these settings can be overridden by content type and content node
+  settings. Configure content wide themes under Administration > Appearance >
+  Content theme > Content wide.
+
+- **Content type themes**  
+  Content type themes applies to all content based on its content type and
+  override content wide themes and the system default theme. But these settings
+  can be overridden by content node settings. Configure content type themes at
+  its content type edit form or under Administration > Appearance > Content
+  theme > Content type.
+
+- **Content node themes**  
+  Content node themes applies only to its own content and override the content
+  type themes, content wide themes, and the system default theme. Configure
+  content node themes at its content node edit form or under Administration >
+  Appearance > Content theme > Content type.
 
 Troubleshooting
 ---------------
 
 If another theme is displayed as expected, enable the Custom Theme Analyzer
-block from the Custom Theme Analyzer module. The block displays a list of
+block from the Custom Theme Analyzer module. This block displays a list of
 modules which override the system default theme sorted by module's call-up.
-(https://backdropcms.org/project/analyzers)
+The Custom Theme Analyzer module is part of the Analyzers collection
+(https://backdropcms.org/project/analyzers).
 
 License
 -------
@@ -31,7 +53,7 @@ complete text.
 Current Maintainers
 -------------------
 
-- Ralf Stamm (https://github.com/rstamm)
+- Ralf Stamm (https://github.com/rstamm).
 
 Credits
 -------
