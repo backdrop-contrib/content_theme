@@ -80,12 +80,12 @@ function content_theme_custom_theme() {
       // Edit content node.
 
       $custom_theme = db_query('SELECT theme_edit FROM {content_theme_node} WHERE nid = :nid', array(':nid' => arg(1)))->fetchField();
-      if (is_null($custom_theme) || $custom_theme == '-content_type-' || $custom_theme == '-content_wide-' ) {
+      if (empty($custom_theme) || $custom_theme == '-content_type-') {
         $type = db_query('SELECT type FROM {node} WHERE nid = :nid', array(':nid' => arg(1)))->fetchField();
         $custom_theme = config_get('node.type.' . $type, 'settings.content_theme_edit');
-        if ($custom_theme == '-content_wide-') {
-          $custom_theme = config_get('content_theme.content_wide', 'content_theme_edit');
-        }
+      }
+      if (empty($custom_theme) || $custom_theme == '-content_wide-') {
+        $custom_theme = config_get('content_theme.content_wide', 'content_theme_edit');
       }
       return $custom_theme != '-system_default-' ? $custom_theme : NULL;
     }
@@ -93,12 +93,12 @@ function content_theme_custom_theme() {
       // View content node.
 
       $custom_theme = db_query('SELECT theme_view FROM {content_theme_node} WHERE nid = :nid', array(':nid' => arg(1)))->fetchField();
-      if (is_null($custom_theme) || $custom_theme == '-content_type-' || $custom_theme == '-content_wide-' ) {
+      if (empty($custom_theme) || $custom_theme == '-content_type-') {
         $type = db_query('SELECT type FROM {node} WHERE nid = :nid', array(':nid' => arg(1)))->fetchField();
         $custom_theme = config_get('node.type.' . $type, 'settings.content_theme_view');
-        if ($custom_theme == '-content_wide-') {
-          $custom_theme = config_get('content_theme.content_wide', 'content_theme_view');
-        }
+      }
+      if (empty($custom_theme) || $custom_theme == '-content_wide-') {
+        $custom_theme = config_get('content_theme.content_wide', 'content_theme_view');
       }
       return $custom_theme != '-system_default-' ? $custom_theme : NULL;
     }
@@ -107,7 +107,7 @@ function content_theme_custom_theme() {
     // Add content node.
 
     $custom_theme = config_get('node.type.' . strtr(arg(2), array('-' => '_')), 'settings.content_theme_edit');
-    if ($custom_theme == '-content_wide-') {
+    if (empty($custom_theme) || $custom_theme == '-content_wide-') {
       $custom_theme = config_get('content_theme.content_wide', 'content_theme_edit');
     }
     return $custom_theme != '-system_default-' ? $custom_theme : NULL;
@@ -267,7 +267,7 @@ function content_theme_form_node_form_alter(&$form, $form_state) {
   $form['content_theme']['content_theme_edit'] = array(
     '#type' => 'select',
     '#title' => t('Editing theme'),
-    '#description' => t('Choose which theme the content creating and editing pages should display in. Default: %default_theme.', array('%default_theme' => t('Content type theme'))),
+    '#description' => t('Choose which theme the content editing pages should display in. Default: %default_theme.', array('%default_theme' => t('Content type theme'))),
     '#default_value' => isset($node->content_theme_edit) ? $node->content_theme_edit : '-content_type-',
     '#options' => content_theme_get_themes_options_content_node(),
     '#access' => user_access('select '. $node->type .' content editing theme'),
